@@ -80,22 +80,21 @@ function fillFields(cell, index) {
     if (fields[index] !== null) {
         return; // Falls das Feld belegt ist, nichts tun
     }
-      
+    
     // Das Feld mit dem aktuellen Spieler belegen
     fields[index] = currentPlayer;
 
     // Im Feld wird entweder ein Kreis oder Kreuz eingesetzt, je nachdem welcher currentPlayer dran ist
-    cell.innerHTML = currentPlayer === 'circle' ? generateCircleSVG() : generateCrossSVG(); 
+    cell.innerHTML = currentPlayer === 'circle' ? generateCircleSVG() : generateCrossSVG();
 
     // Überprüfen, ob jemand gewonnen hat
     if (checkWinner()) {
-
+        
     }
 
     // Spieler wechseln
     currentPlayer = currentPlayer === 'circle' ? 'cross' : 'circle';
 }
-
 
 function checkWinner() {
     const winningCombinations = [
@@ -121,50 +120,58 @@ function checkWinner() {
 }
 
 function drawWinningLine(startIndex, endIndex) {
-    const cellSize = 100; // Größe der Zelle
-    const padding = cellSize / 2; // Padding für das Zentrum der Zelle
-    const extension = 15; // Verlängerung um 15 Pixel
+    const startX = getLineCoords(startIndex).x;
+    const startY = getLineCoords(startIndex).y;
+    const endX = getLineCoords(endIndex).x;
+    const endY = getLineCoords(endIndex).y;
 
-    const startCoords = getLineCoords(startIndex, cellSize);
-    const endCoords = getLineCoords(endIndex, cellSize);
-
-    const startX = startCoords.x + padding;
-    const startY = startCoords.y + padding;
-    const endX = endCoords.x + padding;
-    const endY = endCoords.y + padding;
-
-    // Richtung und Länge der Linie berechnen
     const dx = endX - startX;
     const dy = endY - startY;
-    const length = Math.sqrt(dx * dx + dy * dy);
-
-    // Neue Endpunkte berechnen
-    const newEndX = endX + (dx / length) * extension;
-    const newEndY = endY + (dy / length) * extension;
+    const lineLength = Math.sqrt(dx * dx + dy * dy);
 
     const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
     line.setAttribute("x1", startX);
     line.setAttribute("y1", startY);
-    line.setAttribute("x2", newEndX);
-    line.setAttribute("y2", newEndY);
+    line.setAttribute("x2", endX);
+    line.setAttribute("y2", endY);
     line.setAttribute("stroke", "white");
     line.setAttribute("stroke-width", "5");
+    line.setAttribute("stroke-dasharray", lineLength); // Länge der Linie festlegen
+    line.setAttribute("stroke-dashoffset", lineLength); // Linie vollständig verstecken
+
+    const animate = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+    animate.setAttribute("attributeName", "stroke-dashoffset");
+    animate.setAttribute("from", lineLength);
+    animate.setAttribute("to", "0");
+    animate.setAttribute("dur", "200ms");
+    animate.setAttribute("fill", "freeze");
+
+    line.appendChild(animate);
 
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("width", "300");
-    svg.setAttribute("height", "300");
+    svg.setAttribute("width", "316");
+    svg.setAttribute("height", "316");
     svg.setAttribute("style", "position: absolute; top: 0; left: 0; pointer-events: none;");
     svg.appendChild(line);
 
     document.getElementById('container').appendChild(svg);
 }
 
-function getLineCoords(index, cellSize) {
-    const row = Math.floor(index / 3);
-    const col = index % 3;
+function getLineCoords(index) {
+    const cellSize = 100; // Größe der Zelle
     const padding = cellSize / 2; // Padding für das Zentrum der Zelle
-    const x = col * cellSize;
-    const y = row * cellSize;
+    const tableBorder = 7;
+    const coords = [
+        { x: padding, y: padding },
+        { x: cellSize + padding + tableBorder, y: padding },
+        { x: 2 * cellSize + padding + 2 * tableBorder, y: padding },
+        { x: padding, y: cellSize + padding + tableBorder },
+        { x: cellSize + padding + tableBorder, y: cellSize + padding + tableBorder },
+        { x: 2 * cellSize + padding + 2 * tableBorder, y: cellSize + padding + tableBorder },
+        { x: padding, y: 2 * cellSize + padding + 2 * tableBorder },
+        { x: cellSize + padding + tableBorder, y: 2 * cellSize + padding + 2 * tableBorder },
+        { x: 2 * cellSize + padding + 2 * tableBorder, y: 2 * cellSize + padding + 2 * tableBorder }
+    ];
 
-    return { x, y };
+    return coords[index];
 }
